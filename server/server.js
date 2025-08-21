@@ -18,6 +18,7 @@ const adminAuthRouter = require('./routes/admin-auth');
 const adminRouter = require('./routes/admin');
 const adminInvitationRouter = require('./routes/admin-invitation');
 const adminBatchUploadRouter = require('./routes/admin-batch-upload');
+const initAdminRouter = require('./routes/init-admin');
 
 // 보안 미들웨어
 const { 
@@ -1264,6 +1265,9 @@ app.use('/api/admin/auth', adminAuthRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/admin/invitation', adminInvitationRouter);
 app.use('/api/admin/batch', adminBatchUploadRouter);
+
+// 초기화 API (배포 후 한 번만 실행)
+app.use('/api/setup', initAdminRouter);
 
 // 클라이언트 설정 정보 API (카카오 API 키 등)
 app.get('/api/config', (req, res) => {
