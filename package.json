@@ -11,6 +11,7 @@
         "backup": "node migrate-data.js backup",
         "init-db": "node migrate-data.js both",
         "test-db": "node -e \"const db = require('./database'); db.getTestStats().then(stats => { console.log('DB 연결 성공:', stats); process.exit(0); }).catch(err => { console.error('DB 연결 실패:', err); process.exit(1); });\"",
+        "create-admin": "node create-admin.js",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "dependencies": {
