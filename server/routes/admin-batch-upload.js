@@ -1,7 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const multer = require('multer');
-const csv = require('csv-parser');
+let multer;
+let csv;
+try {
+    multer = require('multer');
+    csv = require('csv-parser');
+} catch (err) {
+    console.warn('⚠️ multer 또는 csv-parser가 설치되지 않음. 배치 업로드 기능 비활성화');
+}
 const fs = require('fs');
 const bcrypt = require('bcryptjs');
 const { Pool } = require('pg');
@@ -16,8 +22,8 @@ const pool = new Pool({
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
-// 파일 업로드 설정
-const upload = multer({
+// 파일 업로드 설정 (multer가 있을 때만)
+const upload = multer ? multer({
     dest: 'uploads/',
     limits: {
         fileSize: 5 * 1024 * 1024, // 5MB 제한
@@ -29,7 +35,7 @@ const upload = multer({
             cb(new Error('CSV 파일만 업로드 가능합니다.'));
         }
     }
-});
+}) : null;
 
 // 임시 비밀번호 생성
 const generateTempPassword = () => {
@@ -445,5 +451,15 @@ router.get('/batch-upload/template',
         res.send(template);
     }
 );
+
+// multer가 없으면 비활성화 메시지를 반환하는 라우터 제공
+if (!multer || !csv) {
+    router.use((req, res) => {
+        res.status(503).json({
+            success: false,
+            message: '배치 업로드 기능이 현재 비활성화되어 있습니다. multer와 csv-parser 패키지를 설치해주세요.'
+        });
+    });
+}
 
 module.exports = router;
