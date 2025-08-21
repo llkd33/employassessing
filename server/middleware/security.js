@@ -1,8 +1,26 @@
-const rateLimit = require('express-rate-limit');
-const helmet = require('helmet');
+// 조건부 패키지 로딩
+let rateLimit;
+let helmet;
 
-// Rate limiting 설정
+try {
+    rateLimit = require('express-rate-limit');
+} catch (err) {
+    console.warn('⚠️ express-rate-limit가 설치되지 않음. Rate limiting 비활성화');
+}
+
+try {
+    helmet = require('helmet');
+} catch (err) {
+    console.warn('⚠️ helmet이 설치되지 않음. 보안 헤더 비활성화');
+}
+
+// Rate limiting 설정 (rateLimit가 있을 때만)
 const createRateLimiter = (windowMs, max, message) => {
+    if (!rateLimit) {
+        // rateLimit가 없으면 빈 미들웨어 반환
+        return (req, res, next) => next();
+    }
+    
     return rateLimit({
         windowMs,
         max,
@@ -162,8 +180,8 @@ const corsOptions = {
     optionsSuccessStatus: 200
 };
 
-// 보안 헤더 설정
-const securityHeaders = helmet({
+// 보안 헤더 설정 (helmet이 있을 때만)
+const securityHeaders = helmet ? helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
@@ -181,7 +199,7 @@ const securityHeaders = helmet({
         includeSubDomains: true,
         preload: true
     }
-});
+}) : (req, res, next) => next(); // helmet이 없으면 빈 미들웨어
 
 // 세션 타임아웃 체크 (관리자용)
 const checkSessionTimeout = (timeoutMinutes = 30) => {
