@@ -13,13 +13,44 @@ dotenv.config();
 // 데이터베이스 연결
 const db = require('../database/database');
 
+// 관리자 라우터
+const adminAuthRouter = require('./routes/admin-auth');
+const adminRouter = require('./routes/admin');
+const adminInvitationRouter = require('./routes/admin-invitation');
+const adminBatchUploadRouter = require('./routes/admin-batch-upload');
+
+// 보안 미들웨어
+const { 
+    securityHeaders, 
+    corsOptions, 
+    apiLimiter,
+    preventSQLInjection,
+    sanitizeInput 
+} = require('./middleware/security');
+
+// API 유틸리티
+const { ErrorHandler } = require('./utils/apiResponse');
+
 const app = express();
 // Railway는 동적 포트를 할당하므로 환경 변수를 우선 사용
 const PORT = process.env.PORT || process.env.RAILWAY_PORT || 3000;
 
-// 미들웨어
-app.use(cors());
-app.use(express.json());
+// 보안 헤더 설정
+app.use(securityHeaders);
+
+// CORS 설정
+app.use(cors(corsOptions));
+
+// Body parser
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// 보안 미들웨어
+app.use(preventSQLInjection);
+app.use(sanitizeInput);
+
+// API Rate limiting
+app.use('/api/', apiLimiter);
 
 // 정적 파일 서빙 - Railway 환경 고려
 const clientPath = path.join(__dirname, '../client');
@@ -42,43 +73,11 @@ app.use((req, res, next) => {
 
 app.use(express.static(clientPath));
 
-// JWT 토큰 생성
-const generateToken = (userId) => {
-    return jwt.sign({ userId }, process.env.JWT_SECRET || 'secret_key_2024', {
-        expiresIn: '7d'
-    });
-};
+// JWT 토큰 생성 (auth 미들웨어에서 가져옴)
+const { generateToken } = require('./middleware/auth');
 
-// JWT 토큰 검증 미들웨어
-const authenticateToken = (req, res, next) => {
-    console.log('🔐 JWT 토큰 인증 시작 - 요청:', req.method, req.path);
-
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-
-    console.log('🔑 Authorization 헤더:', authHeader ? '존재함' : '없음');
-    console.log('🔑 추출된 토큰:', token ? token.substring(0, 20) + '...' : '없음');
-
-    if (!token) {
-        console.log('❌ JWT 토큰 없음');
-        return res.status(401).json({ message: '토큰이 필요합니다.' });
-    }
-
-    jwt.verify(token, process.env.JWT_SECRET || 'secret_key_2024', (err, user) => {
-        if (err) {
-            console.log('❌ JWT 토큰 검증 실패:', err.message);
-            return res.status(403).json({ message: '유효하지 않은 토큰입니다.' });
-        }
-
-        console.log('✅ JWT 토큰 검증 성공:', {
-            userId: user.userId,
-            email: user.email
-        });
-
-        req.user = user;
-        next();
-    });
-};
+// JWT 토큰 검증 미들웨어 (auth 미들웨어에서 가져옴)
+const { authenticateToken } = require('./middleware/auth');
 
 // ===== 인증 API =====
 
@@ -112,8 +111,8 @@ app.post('/api/auth/signup', async (req, res) => {
 
         const user = await db.createUser(userData);
 
-        // 토큰 생성
-        const token = generateToken(userId);
+        // 토큰 생성 (role 정보 포함)
+        const token = generateToken(user);
 
         res.json({
             success: true,
@@ -160,8 +159,8 @@ app.post('/api/auth/login', async (req, res) => {
             });
         }
 
-        // 토큰 생성
-        const token = generateToken(user.user_id);
+        // 토큰 생성 (role 정보 포함)
+        const token = generateToken(user);
 
         res.json({
             success: true,
@@ -234,7 +233,7 @@ app.post('/api/auth/kakao/login', async (req, res) => {
 
         console.log('✅ 카카오 로그인 성공:', user.email);
 
-        const token = generateToken(user.user_id);
+        const token = generateToken(user);
 
         res.json({
             success: true,
@@ -309,7 +308,7 @@ app.post('/api/auth/kakao/signup', async (req, res) => {
         const user = await db.createUser(userData);
         console.log('✅ 카카오 회원가입 성공:', user.email);
 
-        const token = generateToken(user.user_id);
+        const token = generateToken(user);
 
         res.json({
             success: true,
@@ -1260,6 +1259,12 @@ app.get('/api/health', (req, res) => {
     });
 });
 
+// 관리자 API 라우터 등록
+app.use('/api/admin/auth', adminAuthRouter);
+app.use('/api/admin', adminRouter);
+app.use('/api/admin/invitation', adminInvitationRouter);
+app.use('/api/admin/batch', adminBatchUploadRouter);
+
 // 클라이언트 설정 정보 API (카카오 API 키 등)
 app.get('/api/config', (req, res) => {
     const kakaoKey = process.env.KAKAO_JAVASCRIPT_KEY || null;
@@ -1403,5 +1408,18 @@ async function startServer() {
         console.log(`===========================================`);
     });
 }
+
+// 404 핸들러 (모든 라우트 뒤에 위치)
+app.use((req, res) => {
+    res.status(404).json({
+        success: false,
+        error: '요청한 리소스를 찾을 수 없습니다',
+        path: req.originalUrl,
+        timestamp: new Date().toISOString()
+    });
+});
+
+// 전역 에러 핸들러 (가장 마지막에 위치)
+app.use(ErrorHandler.handle);
 
 startServer();

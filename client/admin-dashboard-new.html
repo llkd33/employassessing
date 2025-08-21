@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>관리자 대시보드 - 신입사원 역량 테스트</title>
+    <link rel="stylesheet" href="/css/admin-design-system.css">
+    <style>
+        body {
+            background-color: var(--gray-50);
+            margin: 0;
+            padding: 0;
+        }
+
+        /* 레이아웃 */
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* 사이드바 */
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: white;
+            box-shadow: var(--shadow-md);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            z-index: 100;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+
+        .sidebar-logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border-radius: var(--border-radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 16px 0;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            display: block;
+            padding: 12px 24px;
+            color: var(--gray-700);
+            text-decoration: none;
+            font-size: 15px;
+            transition: var(--transition-base);
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .nav-item:hover {
+            background-color: var(--gray-50);
+            color: var(--primary-color);
+        }
+
+        .nav-item.active {
+            background-color: var(--primary-light);
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background-color: var(--primary-color);
+        }
+
+        .nav-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-badge {
+            margin-left: auto;
+            background-color: var(--danger-color);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .sidebar-footer {
+            padding: 16px;
+            border-top: 1px solid var(--gray-200);
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background-color: var(--gray-50);
+            border-radius: var(--border-radius-sm);
+            margin-bottom: 12px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        .user-info {
+            flex: 1;
+        }
+
+        .user-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--gray-900);
+        }
+
+        .user-role {
+            font-size: 12px;
+            color: var(--gray-500);
+        }
+
+        /* 메인 콘텐츠 */
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 헤더 */
+        .header {
+            background-color: white;
+            box-shadow: var(--shadow-sm);
+            padding: 0 32px;
+            height: var(--header-height);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .menu-toggle {
+            display: none;
+            width: 40px;
+            height: 40px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            color: var(--gray-600);
+        }
+
+        .page-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .header-button {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--border-radius-sm);
+            border: none;
+            background-color: transparent;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gray-600);
+            position: relative;
+            transition: var(--transition-base);
+        }
+
+        .header-button:hover {
+            background-color: var(--gray-100);
+            color: var(--gray-800);
+        }
+
+        .notification-dot {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 8px;
+            height: 8px;
+            background-color: var(--danger-color);
+            border-radius: 50%;
+        }
+
+        /* 콘텐츠 영역 */
+        .content {
+            padding: 32px;
+            flex: 1;
+        }
+
+        /* 통계 그리드 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        /* 차트 섹션 */
+        .charts-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .chart-card {
+            background-color: white;
+            border-radius: var(--border-radius);
+            padding: 24px;
+            box-shadow: var(--shadow);
+        }
+
+        .chart-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+
+        .chart-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+
+        .chart-options {
+            display: flex;
+            gap: 8px;
+        }
+
+        .chart-container {
+            height: 300px;
+            position: relative;
+        }
+
+        /* 최근 활동 */
+        .recent-activity {
+            background-color: white;
+            border-radius: var(--border-radius);
+            padding: 24px;
+            box-shadow: var(--shadow);
+        }
+
+        .activity-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            padding: 16px 0;
+            border-bottom: 1px solid var(--gray-100);
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--border-radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .activity-icon.success {
+            background-color: var(--success-bg);
+            color: var(--success-color);
+        }
+
+        .activity-icon.warning {
+            background-color: var(--warning-bg);
+            color: var(--warning-color);
+        }
+
+        .activity-icon.info {
+            background-color: var(--info-bg);
+            color: var(--info-color);
+        }
+
+        .activity-content {
+            flex: 1;
+        }
+
+        .activity-title {
+            font-weight: 500;
+            color: var(--gray-900);
+            margin-bottom: 4px;
+        }
+
+        .activity-description {
+            font-size: 14px;
+            color: var(--gray-600);
+        }
+
+        .activity-time {
+            font-size: 12px;
+            color: var(--gray-400);
+        }
+
+        /* 모바일 대응 */
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .menu-toggle {
+                display: flex;
+            }
+
+            .charts-section {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .content {
+                padding: 16px;
+            }
+
+            .header {
+                padding: 0 16px;
+            }
+        }
+
+        /* 오버레이 */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 90;
+        }
+
+        .sidebar-overlay.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- 사이드바 -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <div class="sidebar-logo-icon">📊</div>
+                    <span>관리자 패널</span>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="#dashboard" class="nav-item active" data-page="dashboard">
+                    <span class="nav-icon">🏠</span>
+                    <span>대시보드</span>
+                </a>
+                <a href="#employees" class="nav-item" data-page="employees">
+                    <span class="nav-icon">👥</span>
+                    <span>직원 관리</span>
+                    <span class="nav-badge" id="newEmployeeCount" style="display: none;">0</span>
+                </a>
+                <a href="#tests" class="nav-item" data-page="tests">
+                    <span class="nav-icon">📝</span>
+                    <span>테스트 결과</span>
+                </a>
+                <a href="#analytics" class="nav-item" data-page="analytics">
+                    <span class="nav-icon">📈</span>
+                    <span>분석 리포트</span>
+                </a>
+                <a href="#invitations" class="nav-item" data-page="invitations">
+                    <span class="nav-icon">✉️</span>
+                    <span>초대 관리</span>
+                </a>
+                <a href="#companies" class="nav-item" data-page="companies" id="companiesNav" style="display: none;">
+                    <span class="nav-icon">🏢</span>
+                    <span>회사 관리</span>
+                </a>
+                <a href="#settings" class="nav-item" data-page="settings">
+                    <span class="nav-icon">⚙️</span>
+                    <span>설정</span>
+                </a>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="user-avatar" id="userAvatar">A</div>
+                    <div class="user-info">
+                        <div class="user-name" id="userName">관리자</div>
+                        <div class="user-role" id="userRole">Company Admin</div>
+                    </div>
+                </div>
+                <button class="btn btn-outline btn-sm" style="width: 100%;" onclick="logout()">
+                    로그아웃
+                </button>
+            </div>
+        </aside>
+        
+        <!-- 사이드바 오버레이 -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+        
+        <!-- 메인 콘텐츠 -->
+        <main class="main-content">
+            <!-- 헤더 -->
+            <header class="header">
+                <div class="header-left">
+                    <button class="menu-toggle" onclick="toggleSidebar()">
+                        <span style="font-size: 24px;">☰</span>
+                    </button>
+                    <h1 class="page-title" id="pageTitle">대시보드</h1>
+                </div>
+                
+                <div class="header-right">
+                    <button class="header-button" onclick="toggleSearch()">
+                        <span style="font-size: 20px;">🔍</span>
+                    </button>
+                    <button class="header-button" onclick="toggleNotifications()">
+                        <span style="font-size: 20px;">🔔</span>
+                        <span class="notification-dot"></span>
+                    </button>
+                    <button class="header-button" onclick="toggleTheme()">
+                        <span style="font-size: 20px;" id="themeIcon">🌙</span>
+                    </button>
+                </div>
+            </header>
+            
+            <!-- 콘텐츠 영역 -->
+            <div class="content" id="content">
+                <!-- 대시보드 페이지 -->
+                <div id="dashboard-page" class="page active">
+                    <!-- 통계 카드 -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background-color: var(--primary-light); color: var(--primary-color);">
+                                👥
+                            </div>
+                            <div class="stat-value" id="totalEmployees">0</div>
+                            <div class="stat-label">전체 직원</div>
+                            <div class="stat-change positive">
+                                <span>↑</span>
+                                <span>12% 이번 달</span>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background-color: var(--success-bg); color: var(--success-color);">
+                                ✅
+                            </div>
+                            <div class="stat-value" id="completedTests">0</div>
+                            <div class="stat-label">완료된 테스트</div>
+                            <div class="stat-change positive">
+                                <span>↑</span>
+                                <span>8% 증가</span>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background-color: var(--info-bg); color: var(--info-color);">
+                                📊
+                            </div>
+                            <div class="stat-value" id="avgScore">0</div>
+                            <div class="stat-label">평균 점수</div>
+                            <div class="stat-change negative">
+                                <span>↓</span>
+                                <span>3% 감소</span>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background-color: var(--warning-bg); color: var(--warning-color);">
+                                🎯
+                            </div>
+                            <div class="stat-value" id="completionRate">0%</div>
+                            <div class="stat-label">완료율</div>
+                            <div class="stat-change positive">
+                                <span>↑</span>
+                                <span>5% 개선</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 차트 섹션 -->
+                    <div class="charts-section">
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h3 class="chart-title">월별 테스트 현황</h3>
+                                <div class="chart-options">
+                                    <select class="form-select" style="width: 120px;">
+                                        <option>최근 6개월</option>
+                                        <option>최근 1년</option>
+                                        <option>전체</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="monthlyChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h3 class="chart-title">역량별 평균 점수</h3>
+                                <div class="chart-options">
+                                    <button class="btn btn-sm btn-outline">PDF</button>
+                                </div>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="skillsChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 최근 활동 -->
+                    <div class="recent-activity">
+                        <h3 class="card-title" style="margin-bottom: 24px;">최근 활동</h3>
+                        <ul class="activity-list">
+                            <li class="activity-item">
+                                <div class="activity-icon success">✓</div>
+                                <div class="activity-content">
+                                    <div class="activity-title">김철수님이 테스트를 완료했습니다</div>
+                                    <div class="activity-description">전체 점수: 85점 (상위 10%)</div>
+                                </div>
+                                <div class="activity-time">5분 전</div>
+                            </li>
+                            <li class="activity-item">
+                                <div class="activity-icon info">👤</div>
+                                <div class="activity-content">
+                                    <div class="activity-title">새로운 직원이 등록되었습니다</div>
+                                    <div class="activity-description">이영희 (마케팅팀)</div>
+                                </div>
+                                <div class="activity-time">1시간 전</div>
+                            </li>
+                            <li class="activity-item">
+                                <div class="activity-icon warning">📊</div>
+                                <div class="activity-content">
+                                    <div class="activity-title">월간 리포트가 생성되었습니다</div>
+                                    <div class="activity-description">2024년 1월 역량 평가 리포트</div>
+                                </div>
+                                <div class="activity-time">2시간 전</div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- 다른 페이지들은 동적으로 로드됩니다 -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Chart.js 라이브러리 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script>
+        // API URL 설정
+        const API_URL = window.location.protocol === 'file:' 
+            ? 'http://localhost:3000'
+            : '';
+
+        // 전역 변수
+        let currentUser = null;
+        let currentPage = 'dashboard';
+        let charts = {};
+
+        // 초기화
+        async function init() {
+            // 인증 확인
+            const token = localStorage.getItem('adminToken');
+            if (!token) {
+                window.location.href = '/admin-login.html';
+                return;
+            }
+
+            // 사용자 정보 로드
+            try {
+                currentUser = JSON.parse(localStorage.getItem('adminUser'));
+                updateUserInterface();
+                
+                // 권한에 따른 메뉴 표시
+                if (currentUser.role === 'super_admin') {
+                    document.getElementById('companiesNav').style.display = 'flex';
+                }
+                
+                // 대시보드 데이터 로드
+                await loadDashboardData();
+            } catch (error) {
+                console.error('초기화 오류:', error);
+            }
+        }
+
+        // 사용자 인터페이스 업데이트
+        function updateUserInterface() {
+            const userName = document.getElementById('userName');
+            const userRole = document.getElementById('userRole');
+            const userAvatar = document.getElementById('userAvatar');
+            
+            userName.textContent = currentUser.name;
+            userRole.textContent = getRoleDisplayName(currentUser.role);
+            userAvatar.textContent = currentUser.name.charAt(0).toUpperCase();
+        }
+
+        // 역할명 변환
+        function getRoleDisplayName(role) {
+            const roleNames = {
+                'super_admin': '슈퍼 관리자',
+                'company_admin': '회사 관리자',
+                'hr_manager': 'HR 매니저'
+            };
+            return roleNames[role] || role;
+        }
+
+        // 대시보드 데이터 로드
+        async function loadDashboardData() {
+            try {
+                const token = localStorage.getItem('adminToken');
+                
+                // 통계 데이터 로드
+                const response = await fetch(`${API_URL}/api/admin/statistics`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    updateStatistics(data.statistics);
+                    updateCharts(data);
+                }
+                
+                // 사용자 목록 로드 (카운트용)
+                const usersResponse = await fetch(`${API_URL}/api/admin/users?limit=1`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (usersResponse.ok) {
+                    const usersData = await usersResponse.json();
+                    document.getElementById('totalEmployees').textContent = usersData.pagination.total;
+                }
+                
+            } catch (error) {
+                console.error('데이터 로드 오류:', error);
+            }
+        }
+
+        // 통계 업데이트
+        function updateStatistics(stats) {
+            document.getElementById('completedTests').textContent = stats.total_tests || 0;
+            document.getElementById('avgScore').textContent = Math.round(stats.avg_score || 0);
+            
+            const completionRate = stats.total_users > 0 
+                ? Math.round((stats.total_tests / stats.total_users) * 100)
+                : 0;
+            document.getElementById('completionRate').textContent = completionRate + '%';
+        }
+
+        // 차트 업데이트
+        function updateCharts(data) {
+            // 월별 차트
+            const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+            if (charts.monthly) {
+                charts.monthly.destroy();
+            }
+            
+            charts.monthly = new Chart(monthlyCtx, {
+                type: 'line',
+                data: {
+                    labels: data.recentTrend ? data.recentTrend.map(d => 
+                        new Date(d.date).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })
+                    ) : [],
+                    datasets: [{
+                        label: '테스트 수',
+                        data: data.recentTrend ? data.recentTrend.map(d => d.test_count) : [],
+                        borderColor: 'rgb(79, 70, 229)',
+                        backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+            
+            // 역량별 차트
+            const skillsCtx = document.getElementById('skillsChart').getContext('2d');
+            if (charts.skills) {
+                charts.skills.destroy();
+            }
+            
+            const stats = data.statistics;
+            charts.skills = new Chart(skillsCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['문제해결', '의사소통', '리더십', '창의성', '팀워크'],
+                    datasets: [{
+                        label: '평균 점수',
+                        data: [
+                            stats.avg_problem_solving || 0,
+                            stats.avg_communication || 0,
+                            stats.avg_leadership || 0,
+                            stats.avg_creativity || 0,
+                            stats.avg_teamwork || 0
+                        ],
+                        borderColor: 'rgb(124, 58, 237)',
+                        backgroundColor: 'rgba(124, 58, 237, 0.2)',
+                        pointBackgroundColor: 'rgb(124, 58, 237)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgb(124, 58, 237)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+        }
+
+        // 사이드바 토글
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+        }
+
+        // 테마 전환
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('adminTheme', newTheme);
+            
+            // 아이콘 업데이트
+            document.getElementById('themeIcon').textContent = newTheme === 'dark' ? '☀️' : '🌙';
+        }
+
+        // 페이지 네비게이션
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                const page = item.getAttribute('data-page');
+                navigateToPage(page);
+            });
+        });
+
+        function navigateToPage(page) {
+            // 활성 상태 업데이트
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelector(`[data-page="${page}"]`).classList.add('active');
+            
+            // 페이지 제목 업데이트
+            const titles = {
+                dashboard: '대시보드',
+                employees: '직원 관리',
+                tests: '테스트 결과',
+                analytics: '분석 리포트',
+                invitations: '초대 관리',
+                companies: '회사 관리',
+                settings: '설정'
+            };
+            document.getElementById('pageTitle').textContent = titles[page] || page;
+            
+            // TODO: 페이지별 콘텐츠 로드
+            currentPage = page;
+            
+            // 모바일에서 사이드바 닫기
+            if (window.innerWidth <= 1024) {
+                toggleSidebar();
+            }
+        }
+
+        // 로그아웃
+        function logout() {
+            if (confirm('로그아웃 하시겠습니까?')) {
+                localStorage.removeItem('adminToken');
+                localStorage.removeItem('adminUser');
+                window.location.href = '/admin-login.html';
+            }
+        }
+
+        // 테마 초기화
+        const savedTheme = localStorage.getItem('adminTheme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        document.getElementById('themeIcon').textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+
+        // 페이지 로드 시 초기화
+        window.addEventListener('load', init);
+        
+        // 윈도우 리사이즈 처리
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 1024) {
+                document.getElementById('sidebar').classList.remove('open');
+                document.getElementById('sidebarOverlay').classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>

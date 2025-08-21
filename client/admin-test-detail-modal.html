@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>테스트 결과 상세 - 신입사원 역량검사</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 900px;
+            max-height: 90vh;
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .modal-header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-header h2 {
+            margin: 0;
+            font-size: 20px;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        
+        .close-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .modal-body {
+            overflow-y: auto;
+            flex: 1;
+            padding: 30px;
+        }
+        
+        /* 테스트 정보 섹션 */
+        .test-info-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        
+        .test-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .info-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .info-value {
+            font-size: 16px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+        
+        /* 점수 섹션 */
+        .scores-section {
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .overall-score-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        
+        .overall-score-label {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+        
+        .overall-score-value {
+            font-size: 48px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .score-badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+        
+        .competency-scores {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .competency-card {
+            background: white;
+            border: 1px solid #e9ecef;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .competency-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .competency-name {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+        
+        .competency-score {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        
+        .score-diff {
+            font-size: 12px;
+            font-weight: 500;
+            margin-top: 2px;
+        }
+        
+        .score-diff.positive {
+            color: #28a745;
+        }
+        
+        .score-diff.negative {
+            color: #dc3545;
+        }
+        
+        .score-bar {
+            height: 4px;
+            background: #e9ecef;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        
+        .score-fill {
+            height: 100%;
+            background: #3498db;
+            transition: width 0.5s ease;
+        }
+        
+        /* 차트 섹션 */
+        .chart-section {
+            margin-bottom: 30px;
+        }
+        
+        .chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            height: 300px;
+            position: relative;
+        }
+        
+        /* 답변 상세 섹션 */
+        .answers-section {
+            margin-bottom: 30px;
+        }
+        
+        .category-answers {
+            margin-bottom: 25px;
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .category-header {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            font-weight: 600;
+            color: #2c3e50;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .category-header:hover {
+            background: #e9ecef;
+        }
+        
+        .category-score {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .answers-list {
+            padding: 20px;
+            display: none;
+        }
+        
+        .answers-list.expanded {
+            display: block;
+        }
+        
+        .answer-item {
+            padding: 12px 0;
+            border-bottom: 1px solid #f1f3f5;
+        }
+        
+        .answer-item:last-child {
+            border-bottom: none;
+        }
+        
+        .question-text {
+            font-size: 14px;
+            color: #495057;
+            margin-bottom: 8px;
+        }
+        
+        .answer-value {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #e9ecef;
+            border-radius: 15px;
+            font-size: 13px;
+            color: #495057;
+        }
+        
+        .answer-value.positive {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .answer-value.negative {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        /* 로딩 상태 */
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* 오류 상태 */
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        /* 반응형 */
+        @media (max-width: 768px) {
+            .modal-content {
+                width: 95%;
+                max-height: 95vh;
+            }
+            
+            .modal-body {
+                padding: 20px;
+            }
+            
+            .competency-scores {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="testDetailModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>테스트 결과 상세</h2>
+                <button class="close-btn" onclick="closeTestDetailModal()">&times;</button>
+            </div>
+            
+            <div class="modal-body" id="modalBody">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <p>데이터를 불러오는 중...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const API_URL = window.location.protocol === 'file:' 
+            ? 'http://localhost:3000'
+            : (window.location.hostname === 'localhost' 
+                ? 'http://localhost:3000' 
+                : '');
+        
+        let currentResultId = null;
+        let chartInstance = null;
+        
+        // 모달 열기
+        function openTestDetailModal(resultId) {
+            currentResultId = resultId;
+            document.getElementById('testDetailModal').classList.add('active');
+            loadTestDetail(resultId);
+        }
+        
+        // 모달 닫기
+        function closeTestDetailModal() {
+            document.getElementById('testDetailModal').classList.remove('active');
+            if (chartInstance) {
+                chartInstance.destroy();
+                chartInstance = null;
+            }
+        }
+        
+        // 테스트 상세 정보 로드
+        async function loadTestDetail(resultId) {
+            const modalBody = document.getElementById('modalBody');
+            
+            try {
+                const token = localStorage.getItem('adminToken');
+                if (!token) {
+                    throw new Error('인증 토큰이 없습니다.');
+                }
+                
+                const response = await fetch(`${API_URL}/api/admin/test-results/${resultId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('데이터를 불러올 수 없습니다.');
+                }
+                
+                const data = await response.json();
+                displayTestDetail(data);
+                
+            } catch (error) {
+                console.error('테스트 상세 로드 오류:', error);
+                modalBody.innerHTML = `
+                    <div class="error-message">
+                        ${error.message || '데이터를 불러오는 중 오류가 발생했습니다.'}
+                    </div>
+                `;
+            }
+        }
+        
+        // 테스트 상세 정보 표시
+        function displayTestDetail(data) {
+            const { testResult, answers, companyAverage } = data;
+            const modalBody = document.getElementById('modalBody');
+            
+            const testDate = new Date(testResult.test_date);
+            const submittedAt = new Date(testResult.submitted_at);
+            
+            modalBody.innerHTML = `
+                <!-- 테스트 정보 -->
+                <div class="test-info-section">
+                    <div class="test-info-grid">
+                        <div class="info-item">
+                            <div class="info-label">응시자</div>
+                            <div class="info-value">${testResult.user_name}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">이메일</div>
+                            <div class="info-value">${testResult.user_email}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">소속</div>
+                            <div class="info-value">${testResult.company_name || '미할당'}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">응시일</div>
+                            <div class="info-value">${testDate.toLocaleDateString()}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">응시시간</div>
+                            <div class="info-value">${testDate.toLocaleTimeString()}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">소요시간</div>
+                            <div class="info-value">${calculateDuration(testDate, submittedAt)}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 점수 섹션 -->
+                <div class="scores-section">
+                    <h3 class="section-title">📊 평가 결과</h3>
+                    
+                    <!-- 종합 점수 -->
+                    <div class="overall-score-card">
+                        <div class="overall-score-label">종합 점수</div>
+                        <div class="overall-score-value">${testResult.overall_score}점</div>
+                        <div class="score-badge">${getScoreGrade(testResult.overall_score)}</div>
+                        ${companyAverage ? `<div style="margin-top: 10px; font-size: 14px; opacity: 0.9;">조직 평균: ${parseFloat(companyAverage.avg_overall).toFixed(1)}점 (${testResult.overall_score >= companyAverage.avg_overall ? '+' : ''}${(testResult.overall_score - companyAverage.avg_overall).toFixed(1)})</div>` : ''}
+                    </div>
+                    
+                    <!-- 역량별 점수 -->
+                    <div class="competency-scores">
+                        <div class="competency-card">
+                            <div class="competency-name">문제해결능력</div>
+                            <div class="competency-score">${testResult.problem_solving_score}</div>
+                            ${companyAverage ? `<div class="score-diff ${testResult.problem_solving_score >= companyAverage.avg_problem_solving ? 'positive' : 'negative'}">${testResult.problem_solving_score >= companyAverage.avg_problem_solving ? '+' : ''}${(testResult.problem_solving_score - companyAverage.avg_problem_solving).toFixed(1)}</div>` : ''}
+                            <div class="score-bar">
+                                <div class="score-fill" style="width: ${testResult.problem_solving_score}%"></div>
+                            </div>
+                        </div>
+                        <div class="competency-card">
+                            <div class="competency-name">커뮤니케이션</div>
+                            <div class="competency-score">${testResult.communication_score}</div>
+                            ${companyAverage ? `<div class="score-diff ${testResult.communication_score >= companyAverage.avg_communication ? 'positive' : 'negative'}">${testResult.communication_score >= companyAverage.avg_communication ? '+' : ''}${(testResult.communication_score - companyAverage.avg_communication).toFixed(1)}</div>` : ''}
+                            <div class="score-bar">
+                                <div class="score-fill" style="width: ${testResult.communication_score}%"></div>
+                            </div>
+                        </div>
+                        <div class="competency-card">
+                            <div class="competency-name">리더십</div>
+                            <div class="competency-score">${testResult.leadership_score}</div>
+                            ${companyAverage ? `<div class="score-diff ${testResult.leadership_score >= companyAverage.avg_leadership ? 'positive' : 'negative'}">${testResult.leadership_score >= companyAverage.avg_leadership ? '+' : ''}${(testResult.leadership_score - companyAverage.avg_leadership).toFixed(1)}</div>` : ''}
+                            <div class="score-bar">
+                                <div class="score-fill" style="width: ${testResult.leadership_score}%"></div>
+                            </div>
+                        </div>
+                        <div class="competency-card">
+                            <div class="competency-name">창의성</div>
+                            <div class="competency-score">${testResult.creativity_score}</div>
+                            ${companyAverage ? `<div class="score-diff ${testResult.creativity_score >= companyAverage.avg_creativity ? 'positive' : 'negative'}">${testResult.creativity_score >= companyAverage.avg_creativity ? '+' : ''}${(testResult.creativity_score - companyAverage.avg_creativity).toFixed(1)}</div>` : ''}
+                            <div class="score-bar">
+                                <div class="score-fill" style="width: ${testResult.creativity_score}%"></div>
+                            </div>
+                        </div>
+                        <div class="competency-card">
+                            <div class="competency-name">팀워크</div>
+                            <div class="competency-score">${testResult.teamwork_score}</div>
+                            ${companyAverage ? `<div class="score-diff ${testResult.teamwork_score >= companyAverage.avg_teamwork ? 'positive' : 'negative'}">${testResult.teamwork_score >= companyAverage.avg_teamwork ? '+' : ''}${(testResult.teamwork_score - companyAverage.avg_teamwork).toFixed(1)}</div>` : ''}
+                            <div class="score-bar">
+                                <div class="score-fill" style="width: ${testResult.teamwork_score}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 레이더 차트 -->
+                <div class="chart-section">
+                    <h3 class="section-title">📈 역량 분석 차트</h3>
+                    <div class="chart-container">
+                        <canvas id="competencyRadarChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- 답변 상세 -->
+                <div class="answers-section">
+                    <h3 class="section-title">📝 답변 상세</h3>
+                    ${generateAnswersHTML(answers)}
+                </div>
+            `;
+            
+            // 차트 그리기
+            drawCompetencyChart(testResult, companyAverage);
+            
+            // 카테고리 토글 이벤트 추가
+            addCategoryToggleEvents();
+        }
+        
+        // 소요시간 계산
+        function calculateDuration(start, end) {
+            const diff = end - start;
+            const minutes = Math.floor(diff / 60000);
+            const seconds = Math.floor((diff % 60000) / 1000);
+            return `${minutes}분 ${seconds}초`;
+        }
+        
+        // 점수 등급 반환
+        function getScoreGrade(score) {
+            if (score >= 90) return '매우 우수';
+            if (score >= 80) return '우수';
+            if (score >= 70) return '양호';
+            if (score >= 60) return '보통';
+            return '미흡';
+        }
+        
+        // 답변 HTML 생성
+        function generateAnswersHTML(answers) {
+            // 답변을 카테고리별로 그룹화
+            const categories = {
+                '문제해결능력': { questions: [], range: [1, 15] },
+                '커뮤니케이션': { questions: [], range: [16, 30] },
+                '리더십': { questions: [], range: [31, 45] },
+                '창의성': { questions: [], range: [46, 60] },
+                '팀워크': { questions: [], range: [61, 75] }
+            };
+            
+            // 문제 텍스트 (간단히)
+            const questionTexts = getQuestionTexts();
+            
+            answers.forEach(answer => {
+                const qid = answer.question_id;
+                let category = '';
+                
+                if (qid >= 1 && qid <= 15) category = '문제해결능력';
+                else if (qid >= 16 && qid <= 30) category = '커뮤니케이션';
+                else if (qid >= 31 && qid <= 45) category = '리더십';
+                else if (qid >= 46 && qid <= 60) category = '창의성';
+                else if (qid >= 61 && qid <= 75) category = '팀워크';
+                
+                if (category) {
+                    categories[category].questions.push({
+                        id: qid,
+                        text: questionTexts[qid - 1] || `문제 ${qid}`,
+                        answer: answer.answer
+                    });
+                }
+            });
+            
+            let html = '';
+            
+            for (const [category, data] of Object.entries(categories)) {
+                const avgScore = calculateCategoryAverage(data.questions);
+                
+                html += `
+                    <div class="category-answers">
+                        <div class="category-header" onclick="toggleCategory(this)">
+                            <span>${category} (${data.questions.length}문항)</span>
+                            <span class="category-score">평균: ${avgScore}점</span>
+                        </div>
+                        <div class="answers-list">
+                            ${data.questions.map(q => `
+                                <div class="answer-item">
+                                    <div class="question-text">${q.id}. ${q.text}</div>
+                                    <span class="answer-value ${getAnswerClass(q.answer)}">${q.answer}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            return html;
+        }
+        
+        // 카테고리별 평균 점수 계산
+        function calculateCategoryAverage(questions) {
+            const scores = questions.map(q => {
+                switch (q.answer) {
+                    case '매우 그렇다': return 100;
+                    case '그렇다': return 75;
+                    case '보통': return 50;
+                    case '아니다': return 25;
+                    case '매우 아니다': return 0;
+                    default: return 50;
+                }
+            });
+            
+            const avg = scores.reduce((sum, score) => sum + score, 0) / scores.length;
+            return Math.round(avg);
+        }
+        
+        // 답변 클래스 반환
+        function getAnswerClass(answer) {
+            if (answer === '매우 그렇다' || answer === '그렇다') return 'positive';
+            if (answer === '아니다' || answer === '매우 아니다') return 'negative';
+            return '';
+        }
+        
+        // 역량 차트 그리기
+        function drawCompetencyChart(testResult, companyAverage) {
+            const ctx = document.getElementById('competencyRadarChart').getContext('2d');
+            
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+            
+            const datasets = [{
+                label: testResult.user_name || '개인 점수',
+                data: [
+                    testResult.problem_solving_score,
+                    testResult.communication_score,
+                    testResult.leadership_score,
+                    testResult.creativity_score,
+                    testResult.teamwork_score
+                ],
+                backgroundColor: 'rgba(102, 126, 234, 0.25)',
+                borderColor: '#667eea',
+                borderWidth: 2,
+                pointBackgroundColor: '#667eea',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: '#667eea',
+                pointRadius: 5,
+                pointHoverRadius: 7
+            }];
+            
+            if (companyAverage) {
+                datasets.push({
+                    label: '조직 평균',
+                    data: [
+                        parseFloat(companyAverage.avg_problem_solving),
+                        parseFloat(companyAverage.avg_communication),
+                        parseFloat(companyAverage.avg_leadership),
+                        parseFloat(companyAverage.avg_creativity),
+                        parseFloat(companyAverage.avg_teamwork)
+                    ],
+                    backgroundColor: 'rgba(255, 99, 132, 0.25)',
+                    borderColor: '#ff6384',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#ff6384',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: '#ff6384',
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                });
+            }
+            
+            chartInstance = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['문제해결능력', '커뮤니케이션', '리더십', '창의성', '팀워크'],
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                stepSize: 20
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'bottom',
+                            labels: {
+                                boxWidth: 15,
+                                padding: 10
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 카테고리 토글
+        function toggleCategory(header) {
+            const answersList = header.nextElementSibling;
+            answersList.classList.toggle('expanded');
+        }
+        
+        // 카테고리 토글 이벤트 추가
+        function addCategoryToggleEvents() {
+            // 이미 onclick으로 처리됨
+        }
+        
+        // 문제 텍스트 (실제 문제)
+        function getQuestionTexts() {
+            return [
+                // 문제해결능력 (1-15)
+                '복잡한 문제가 발생했을 때 체계적으로 분석하고 해결책을 찾는다.',
+                '어려운 상황에서도 포기하지 않고 끝까지 해결방법을 모색한다.',
+                '문제의 원인을 정확히 파악하기 위해 충분한 정보를 수집한다.',
+                '여러 가지 해결방안을 검토한 후 최적의 방법을 선택한다.',
+                '예상치 못한 상황에서도 빠르게 대응할 수 있다.',
+                '문제 해결을 위해 창의적인 접근방법을 시도한다.',
+                '시간적 제약이 있어도 효율적으로 문제를 해결한다.',
+                '실패한 경험을 통해 더 나은 해결책을 찾는다.',
+                '논리적 사고를 바탕으로 문제를 분석한다.',
+                '문제 상황에서 우선순위를 정하여 체계적으로 접근한다.',
+                '다양한 관점에서 문제를 바라보려고 노력한다.',
+                '문제 해결 과정에서 발생하는 장애물을 극복한다.',
+                '과거의 경험을 활용하여 현재 문제를 해결한다.',
+                '문제 해결을 위해 필요한 자원을 적극적으로 활용한다.',
+                '문제 해결 후 결과를 평가하고 개선점을 찾는다.',
+                
+                // 커뮤니케이션 (16-30)
+                '다른 사람의 의견을 주의 깊게 듣고 이해하려고 노력한다.',
+                '내 생각과 의견을 명확하고 이해하기 쉽게 전달한다.',
+                '상대방의 입장에서 생각하며 소통한다.',
+                '갈등 상황에서 상호 이해를 돕는 대화를 시도한다.',
+                '피드백을 받을 때 열린 마음으로 수용한다.',
+                '비언어적 표현(몸짓, 표정 등)을 효과적으로 활용한다.',
+                '상황에 맞는 적절한 언어를 사용한다.',
+                '다른 사람의 감정을 이해하고 공감한다.',
+                '의견 차이가 있을 때 건설적인 토론을 이끈다.',
+                '상대방이 이해할 수 있는 수준에 맞춰 설명한다.',
+                '중요한 내용은 반복하여 전달한다.',
+                '상대방의 말을 끝까지 들은 후에 응답한다.',
+                '질문을 통해 상대방의 의도를 명확히 파악한다.',
+                '긍정적인 분위기에서 대화하려고 노력한다.',
+                '서면으로도 명확하고 체계적으로 의사소통한다.',
+                
+                // 리더십 (31-45)
+                '팀이 목표를 달성할 수 있도록 방향을 제시한다.',
+                '어려운 결정을 내려야 할 때 책임감을 가지고 결정한다.',
+                '팀원들의 능력을 파악하고 적절한 역할을 부여한다.',
+                '팀원들이 성장할 수 있도록 지원하고 격려한다.',
+                '솔선수범하여 팀의 모범이 되려고 노력한다.',
+                '팀원들의 의견을 수렴하여 의사결정에 반영한다.',
+                '변화가 필요한 상황에서 팀을 이끌어간다.',
+                '팀의 성과와 실패에 대해 책임을 진다.',
+                '팀원들에게 동기를 부여하고 영감을 준다.',
+                '갈등 상황에서 중재자 역할을 효과적으로 수행한다.',
+                '팀의 비전과 목표를 명확히 전달한다.',
+                '위기 상황에서 침착하게 팀을 이끈다.',
+                '팀원들의 다양성을 인정하고 활용한다.',
+                '성과에 대해 적절한 보상과 인정을 제공한다.',
+                '지속적인 학습을 통해 리더십 역량을 개발한다.',
+                
+                // 창의성 (46-60)
+                '기존과 다른 새로운 아이디어를 자주 제안한다.',
+                '다양한 관점에서 문제를 바라보려고 한다.',
+                '기존의 방식에 만족하지 않고 개선방안을 모색한다.',
+                '상상력을 발휘하여 독창적인 해결책을 찾는다.',
+                '새로운 변화나 도전을 두려워하지 않는다.',
+                '실험적인 접근을 시도하는 것을 좋아한다.',
+                '다른 사람의 아이디어에서 영감을 얻어 발전시킨다.',
+                '브레인스토밍과 같은 창의적 활동에 적극 참여한다.',
+                '예술, 문화 등 다양한 분야에 관심이 많다.',
+                '실패를 두려워하지 않고 새로운 시도를 한다.',
+                '일상적인 업무에서도 효율성을 높이는 방법을 찾는다.',
+                '다른 분야의 지식을 현재 업무에 적용한다.',
+                '호기심이 많고 새로운 것을 배우려고 한다.',
+                '틀에 박힌 사고보다는 유연한 사고를 선호한다.',
+                '혁신적인 아이디어를 실현 가능한 계획으로 구체화한다.',
+                
+                // 팀워크 (61-75)
+                '팀의 목표를 개인의 목표보다 우선시한다.',
+                '동료가 도움을 요청할 때 기꺼이 협력한다.',
+                '팀원들과의 관계를 원만하게 유지한다.',
+                '팀 내에서 자신의 역할과 책임을 충실히 수행한다.',
+                '팀의 성과를 위해 개인적인 희생을 감수할 수 있다.',
+                '팀원들의 의견을 존중하고 경청한다.',
+                '팀 프로젝트에서 적극적으로 참여한다.',
+                '팀원들과 정보와 지식을 공유한다.',
+                '팀의 결정에 대해 개인적으로 동의하지 않아도 지지한다.',
+                '팀원들의 강점을 인정하고 활용한다.',
+                '팀 내 갈등이 있을 때 해결하려고 노력한다.',
+                '팀의 업무 분담이 공정하게 이루어지도록 노력한다.',
+                '팀원들에게 건설적인 피드백을 제공한다.',
+                '팀의 성공을 위해 개인적 성과보다 팀 성과를 중시한다.',
+                '새로운 팀원이 합류했을 때 적응을 도와준다.'
+            ];
+        }
+        
+        // 외부에서 호출할 수 있도록 전역 함수로 등록
+        window.openTestDetailModal = openTestDetailModal;
+        window.closeTestDetailModal = closeTestDetailModal;
+        window.toggleCategory = toggleCategory;
+    </script>
+</body>
+</html>

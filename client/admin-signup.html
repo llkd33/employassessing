@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>관리자 가입 - 신입사원 역량검사</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .admin-signup-container {
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 40px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .admin-signup-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .admin-signup-header h1 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .admin-badge {
+            display: inline-block;
+            background: #ff6b6b;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #4A90E2;
+        }
+        
+        .form-help {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+        }
+        
+        .company-code-info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2196f3;
+        }
+        
+        .company-code-info h3 {
+            margin: 0 0 10px 0;
+            color: #1976d2;
+            font-size: 16px;
+        }
+        
+        .company-code-info p {
+            margin: 0;
+            color: #555;
+            font-size: 14px;
+        }
+        
+        .admin-signup-btn {
+            width: 100%;
+            padding: 14px;
+            background: #4A90E2;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .admin-signup-btn:hover {
+            background: #357ABD;
+        }
+        
+        .admin-signup-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+        
+        .success-message {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+        
+        .admin-links {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        
+        .admin-links a {
+            color: #4A90E2;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        
+        .admin-links a:hover {
+            text-decoration: underline;
+        }
+        
+        .password-strength {
+            margin-top: 5px;
+            font-size: 12px;
+        }
+        
+        .password-strength.weak {
+            color: #d32f2f;
+        }
+        
+        .password-strength.medium {
+            color: #f57c00;
+        }
+        
+        .password-strength.strong {
+            color: #388e3c;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-signup-container">
+        <div class="admin-signup-header">
+            <h1>관리자 가입</h1>
+            <span class="admin-badge">ADMIN</span>
+        </div>
+        
+        <div class="company-code-info">
+            <h3>📌 회사 코드 안내</h3>
+            <p>관리자 가입을 위해서는 회사에서 발급한 고유 코드가 필요합니다.</p>
+            <p>회사 코드는 인사팀 또는 시스템 관리자에게 문의하세요.</p>
+        </div>
+        
+        <div id="errorMessage" class="error-message"></div>
+        <div id="successMessage" class="success-message"></div>
+        
+        <form id="adminSignupForm">
+            <div class="form-group">
+                <label for="name">이름</label>
+                <input type="text" id="name" name="name" required 
+                       placeholder="홍길동">
+            </div>
+            
+            <div class="form-group">
+                <label for="email">관리자 이메일</label>
+                <input type="email" id="email" name="email" required 
+                       placeholder="admin@company.com">
+                <div class="form-help">회사 이메일을 사용해주세요</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">비밀번호</label>
+                <input type="password" id="password" name="password" required
+                       placeholder="최소 8자 이상">
+                <div id="passwordStrength" class="password-strength"></div>
+            </div>
+            
+            <div class="form-group">
+                <label for="passwordConfirm">비밀번호 확인</label>
+                <input type="password" id="passwordConfirm" name="passwordConfirm" required
+                       placeholder="비밀번호를 다시 입력하세요">
+            </div>
+            
+            <div class="form-group">
+                <label for="companyCode">회사 코드</label>
+                <input type="text" id="companyCode" name="companyCode" required
+                       placeholder="예: SAMSUNG2024">
+                <div class="form-help">회사에서 발급받은 코드를 입력하세요</div>
+            </div>
+            
+            <button type="submit" class="admin-signup-btn" id="signupBtn">
+                관리자 가입
+            </button>
+        </form>
+        
+        <div class="admin-links">
+            <a href="admin-login.html">이미 관리자 계정이 있으신가요? 로그인</a>
+        </div>
+    </div>
+    
+    <script>
+        // API URL 설정 - 파일로 직접 열 때도 작동하도록 수정
+        const API_URL = window.location.protocol === 'file:' 
+            ? 'http://localhost:3000'  // 파일로 열었을 때
+            : (window.location.hostname === 'localhost' 
+                ? 'http://localhost:3000' 
+                : '');  // 서버를 통해 접속했을 때
+        
+        const adminSignupForm = document.getElementById('adminSignupForm');
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+        const signupBtn = document.getElementById('signupBtn');
+        const passwordInput = document.getElementById('password');
+        const passwordStrength = document.getElementById('passwordStrength');
+        
+        // 비밀번호 강도 체크
+        passwordInput.addEventListener('input', (e) => {
+            const password = e.target.value;
+            let strength = '';
+            let className = '';
+            
+            if (password.length < 8) {
+                strength = '비밀번호가 너무 짧습니다 (최소 8자)';
+                className = 'weak';
+            } else if (password.length < 12) {
+                strength = '보통 강도';
+                className = 'medium';
+            } else {
+                strength = '강한 비밀번호';
+                className = 'strong';
+            }
+            
+            passwordStrength.textContent = strength;
+            passwordStrength.className = `password-strength ${className}`;
+        });
+        
+        adminSignupForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // 에러 메시지 초기화
+            errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
+            
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const passwordConfirm = document.getElementById('passwordConfirm').value;
+            const companyCode = document.getElementById('companyCode').value;
+            
+            // 비밀번호 확인
+            if (password !== passwordConfirm) {
+                errorMessage.textContent = '비밀번호가 일치하지 않습니다.';
+                errorMessage.style.display = 'block';
+                return;
+            }
+            
+            // 비밀번호 길이 확인
+            if (password.length < 8) {
+                errorMessage.textContent = '비밀번호는 최소 8자 이상이어야 합니다.';
+                errorMessage.style.display = 'block';
+                return;
+            }
+            
+            // 버튼 비활성화
+            signupBtn.disabled = true;
+            signupBtn.textContent = '가입 처리 중...';
+            
+            try {
+                const response = await fetch(`${API_URL}/api/admin/auth/signup`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name,
+                        email,
+                        password,
+                        companyCode
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    // 성공 메시지 표시
+                    successMessage.textContent = '관리자 가입이 완료되었습니다! 로그인 페이지로 이동합니다...';
+                    successMessage.style.display = 'block';
+                    
+                    // 자동 로그인
+                    if (data.token) {
+                        localStorage.setItem('adminToken', data.token);
+                        localStorage.setItem('adminUser', JSON.stringify(data.user));
+                        
+                        // 관리자 페이지로 리다이렉트
+                        setTimeout(() => {
+                            window.location.href = 'admin-dashboard.html';
+                        }, 1500);
+                    } else {
+                        // 로그인 페이지로 리다이렉트
+                        setTimeout(() => {
+                            window.location.href = 'admin-login.html';
+                        }, 2000);
+                    }
+                } else {
+                    // 에러 메시지 표시
+                    errorMessage.textContent = data.error || '가입에 실패했습니다.';
+                    errorMessage.style.display = 'block';
+                    
+                    // 버튼 재활성화
+                    signupBtn.disabled = false;
+                    signupBtn.textContent = '관리자 가입';
+                }
+            } catch (error) {
+                console.error('가입 오류:', error);
+                errorMessage.textContent = '네트워크 오류가 발생했습니다. 다시 시도해주세요.';
+                errorMessage.style.display = 'block';
+                
+                // 버튼 재활성화
+                signupBtn.disabled = false;
+                signupBtn.textContent = '관리자 가입';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>사용자 상세 정보 - 신입사원 역량검사</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="admin-test-detail-modal.html">
+    <style>
+        body {
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .admin-header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .admin-header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .admin-header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .back-btn, .logout-btn {
+            background: #34495e;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .back-btn:hover, .logout-btn:hover {
+            background: #2c3e50;
+        }
+        
+        .detail-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        
+        .user-info-section {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .user-info-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .user-info-header h2 {
+            margin: 0;
+            color: #2c3e50;
+            font-size: 24px;
+        }
+        
+        .user-status {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .info-item {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .info-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .info-value {
+            font-size: 16px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+        
+        .test-results-section {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .section-header {
+            margin-bottom: 20px;
+        }
+        
+        .section-header h3 {
+            margin: 0;
+            color: #2c3e50;
+            font-size: 20px;
+        }
+        
+        .test-list {
+            margin-top: 20px;
+        }
+        
+        .test-item {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .test-item:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .test-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .test-date {
+            font-weight: 500;
+            color: #2c3e50;
+        }
+        
+        .test-score {
+            font-size: 24px;
+            font-weight: bold;
+            color: #3498db;
+        }
+        
+        .test-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .competency-score {
+            text-align: center;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+        }
+        
+        .competency-name {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .competency-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .chart-container {
+            margin-top: 30px;
+            height: 400px;
+            position: relative;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        
+        .empty-state h4 {
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 20px;
+            border-radius: 5px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .assign-company-section {
+            background: #fff3cd;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .assign-company-section h4 {
+            margin: 0 0 15px 0;
+            color: #856404;
+        }
+        
+        .assign-form {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .assign-form select {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        
+        .assign-btn {
+            padding: 8px 20px;
+            background: #f0ad4e;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .assign-btn:hover {
+            background: #ec971f;
+        }
+    </style>
+</head>
+<body>
+    <header class="admin-header">
+        <div class="admin-header-content">
+            <h1>사용자 상세 정보</h1>
+            <div class="header-actions">
+                <a href="admin-dashboard.html" class="back-btn">대시보드로 돌아가기</a>
+                <button class="logout-btn" onclick="logout()">로그아웃</button>
+            </div>
+        </div>
+    </header>
+    
+    <div class="detail-container">
+        <!-- 사용자 기본 정보 -->
+        <div class="user-info-section">
+            <div class="user-info-header">
+                <h2 id="userName">-</h2>
+                <span class="user-status">활성</span>
+            </div>
+            
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">이메일</div>
+                    <div class="info-value" id="userEmail">-</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">소속 회사</div>
+                    <div class="info-value" id="userCompany">-</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">가입일</div>
+                    <div class="info-value" id="userJoinDate">-</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">로그인 방식</div>
+                    <div class="info-value" id="userLoginType">-</div>
+                </div>
+            </div>
+            
+            <!-- 회사 할당 섹션 (미할당 사용자용) -->
+            <div id="assignCompanySection" class="assign-company-section" style="display: none;">
+                <h4>회사 할당</h4>
+                <p>이 사용자는 아직 회사에 할당되지 않았습니다.</p>
+                <div class="assign-form">
+                    <select id="companySelect">
+                        <option value="">회사 선택...</option>
+                    </select>
+                    <button class="assign-btn" onclick="assignToCompany()">할당하기</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 테스트 결과 -->
+        <div class="test-results-section">
+            <div class="section-header">
+                <h3>테스트 결과 이력</h3>
+            </div>
+            
+            <div id="testResultsContainer">
+                <div class="loading">테스트 결과를 불러오는 중...</div>
+            </div>
+            
+            <!-- 점수 추이 차트 -->
+            <div class="chart-container" id="chartContainer" style="display: none;">
+                <canvas id="scoreProgressChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // API URL 설정 - 파일로 직접 열 때도 작동하도록 수정
+        const API_URL = window.location.protocol === 'file:' 
+            ? 'http://localhost:3000'  // 파일로 열었을 때
+            : (window.location.hostname === 'localhost' 
+                ? 'http://localhost:3000' 
+                : '');  // 서버를 통해 접속했을 때
+        
+        let currentUser = null;
+        let chartInstance = null;
+        
+        // 페이지 로드 시 실행
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAdminAuth();
+            const userId = getUserIdFromUrl();
+            if (userId) {
+                loadUserDetail(userId);
+            } else {
+                showError('사용자 ID가 없습니다.');
+            }
+        });
+        
+        // URL에서 사용자 ID 가져오기
+        function getUserIdFromUrl() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('userId');
+        }
+        
+        // 관리자 인증 확인
+        function checkAdminAuth() {
+            const token = localStorage.getItem('adminToken');
+            const adminUser = JSON.parse(localStorage.getItem('adminUser') || '{}');
+            
+            if (!token || !adminUser.role || !['super_admin', 'company_admin'].includes(adminUser.role)) {
+                alert('관리자 권한이 필요합니다.');
+                window.location.href = 'admin-login.html';
+                return;
+            }
+        }
+        
+        // 사용자 상세 정보 로드
+        async function loadUserDetail(userId) {
+            try {
+                const response = await fetch(`${API_URL}/api/admin/users/${userId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    currentUser = data.user;
+                    displayUserInfo(data.user);
+                    displayTestResults(data.testResults);
+                    
+                    // 회사 미할당 사용자인 경우
+                    if (!data.user.company_id) {
+                        showAssignCompanySection();
+                    }
+                } else if (response.status === 404) {
+                    showError('사용자를 찾을 수 없습니다.');
+                } else if (response.status === 403) {
+                    showError('이 사용자의 정보를 볼 권한이 없습니다.');
+                } else {
+                    showError('사용자 정보를 불러올 수 없습니다.');
+                }
+            } catch (error) {
+                console.error('사용자 상세 로드 오류:', error);
+                showError('네트워크 오류가 발생했습니다.');
+            }
+        }
+        
+        // 사용자 정보 표시
+        function displayUserInfo(user) {
+            document.getElementById('userName').textContent = user.name;
+            document.getElementById('userEmail').textContent = user.email;
+            document.getElementById('userCompany').textContent = user.company_name || '미할당';
+            document.getElementById('userJoinDate').textContent = 
+                new Date(user.created_at).toLocaleDateString();
+            
+            const loginTypeMap = {
+                'email': '이메일',
+                'kakao': '카카오',
+                'anonymous': '익명',
+                'temp': '임시'
+            };
+            document.getElementById('userLoginType').textContent = 
+                loginTypeMap[user.login_type] || user.login_type;
+        }
+        
+        // 테스트 결과 표시
+        function displayTestResults(testResults) {
+            const container = document.getElementById('testResultsContainer');
+            
+            if (!testResults || testResults.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h4>테스트 결과가 없습니다</h4>
+                        <p>아직 역량검사를 진행하지 않았습니다.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '<div class="test-list">';
+            
+            testResults.forEach((result, index) => {
+                const testDate = new Date(result.test_date);
+                const dateStr = testDate.toLocaleDateString();
+                const timeStr = testDate.toLocaleTimeString();
+                
+                html += `
+                    <div class="test-item" onclick="viewTestDetail('${result.result_id}')">
+                        <div class="test-item-header">
+                            <div class="test-date">
+                                <strong>${dateStr}</strong> ${timeStr}
+                                ${index === 0 ? '<span style="color: #3498db; margin-left: 10px;">(최신)</span>' : ''}
+                            </div>
+                            <div class="test-score">${result.overall_score}점</div>
+                        </div>
+                        <div class="test-details">
+                            <div class="competency-score">
+                                <div class="competency-name">문제해결</div>
+                                <div class="competency-value">${result.problem_solving_score}</div>
+                            </div>
+                            <div class="competency-score">
+                                <div class="competency-name">커뮤니케이션</div>
+                                <div class="competency-value">${result.communication_score}</div>
+                            </div>
+                            <div class="competency-score">
+                                <div class="competency-name">리더십</div>
+                                <div class="competency-value">${result.leadership_score}</div>
+                            </div>
+                            <div class="competency-score">
+                                <div class="competency-name">창의성</div>
+                                <div class="competency-value">${result.creativity_score}</div>
+                            </div>
+                            <div class="competency-score">
+                                <div class="competency-name">팀워크</div>
+                                <div class="competency-value">${result.teamwork_score}</div>
+                            </div>
+                        </div>
+                        <div style="text-align: center; margin-top: 15px;">
+                            <button onclick="viewTestDetail('${result.result_id}')" style="padding: 8px 20px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">
+                                상세 분석 보기
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+            
+            // 차트 표시
+            if (testResults.length > 1) {
+                document.getElementById('chartContainer').style.display = 'block';
+                displayScoreProgressChart(testResults);
+            }
+        }
+        
+        // 점수 추이 차트
+        function displayScoreProgressChart(testResults) {
+            const ctx = document.getElementById('scoreProgressChart').getContext('2d');
+            
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+            
+            // 최근 10개 결과만 표시
+            const recentResults = testResults.slice(0, 10).reverse();
+            
+            const labels = recentResults.map(r => 
+                new Date(r.test_date).toLocaleDateString()
+            );
+            
+            const datasets = [
+                {
+                    label: '전체 점수',
+                    data: recentResults.map(r => r.overall_score),
+                    borderColor: '#3498db',
+                    backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                    borderWidth: 3,
+                    tension: 0.3
+                },
+                {
+                    label: '문제해결',
+                    data: recentResults.map(r => r.problem_solving_score),
+                    borderColor: '#e74c3c',
+                    backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    hidden: true
+                },
+                {
+                    label: '커뮤니케이션',
+                    data: recentResults.map(r => r.communication_score),
+                    borderColor: '#f39c12',
+                    backgroundColor: 'rgba(243, 156, 18, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    hidden: true
+                },
+                {
+                    label: '리더십',
+                    data: recentResults.map(r => r.leadership_score),
+                    borderColor: '#27ae60',
+                    backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    hidden: true
+                },
+                {
+                    label: '창의성',
+                    data: recentResults.map(r => r.creativity_score),
+                    borderColor: '#9b59b6',
+                    backgroundColor: 'rgba(155, 89, 182, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    hidden: true
+                },
+                {
+                    label: '팀워크',
+                    data: recentResults.map(r => r.teamwork_score),
+                    borderColor: '#1abc9c',
+                    backgroundColor: 'rgba(26, 188, 156, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    hidden: true
+                }
+            ];
+            
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '점수 변화 추이'
+                        },
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                stepSize: 20
+                            }
+                        }
+                    },
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                }
+            });
+        }
+        
+        // 회사 할당 섹션 표시
+        async function showAssignCompanySection() {
+            const adminUser = JSON.parse(localStorage.getItem('adminUser') || '{}');
+            
+            // 회사 관리자는 자기 회사로만 할당 가능
+            if (adminUser.role === 'company_admin') {
+                document.getElementById('assignCompanySection').style.display = 'block';
+                const select = document.getElementById('companySelect');
+                select.innerHTML = `
+                    <option value="${adminUser.companyId}">${adminUser.companyName}</option>
+                `;
+            } 
+            // 슈퍼 관리자는 모든 회사 선택 가능
+            else if (adminUser.role === 'super_admin') {
+                document.getElementById('assignCompanySection').style.display = 'block';
+                await loadCompaniesForAssign();
+            }
+        }
+        
+        // 회사 목록 로드 (할당용)
+        async function loadCompaniesForAssign() {
+            try {
+                const response = await fetch(`${API_URL}/api/admin/companies`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const select = document.getElementById('companySelect');
+                    
+                    select.innerHTML = '<option value="">회사 선택...</option>';
+                    data.companies.forEach(company => {
+                        const option = document.createElement('option');
+                        option.value = company.id;
+                        option.textContent = company.name;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('회사 목록 로드 오류:', error);
+            }
+        }
+        
+        // 회사에 할당
+        async function assignToCompany() {
+            const companyId = document.getElementById('companySelect').value;
+            
+            if (!companyId) {
+                alert('회사를 선택해주세요.');
+                return;
+            }
+            
+            try {
+                const response = await fetch(
+                    `${API_URL}/api/admin/users/${currentUser.user_id}/assign`,
+                    {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ companyId })
+                    }
+                );
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    alert(`${data.companyName}에 할당되었습니다.`);
+                    location.reload();
+                } else {
+                    const error = await response.json();
+                    alert(error.error || '할당에 실패했습니다.');
+                }
+            } catch (error) {
+                console.error('회사 할당 오류:', error);
+                alert('네트워크 오류가 발생했습니다.');
+            }
+        }
+        
+        // 테스트 상세 보기
+        async function viewTestDetail(resultId) {
+            try {
+                const token = localStorage.getItem('adminToken');
+                const response = await fetch(`${API_URL}/api/admin/test-results/${resultId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    showTestDetailModal(data);
+                } else {
+                    alert('테스트 결과를 불러올 수 없습니다.');
+                }
+            } catch (error) {
+                console.error('테스트 상세 조회 오류:', error);
+                alert('오류가 발생했습니다.');
+            }
+        }
+        
+        // 테스트 상세 모달 표시
+        function showTestDetailModal(data) {
+            // 외부 모달 파일의 함수를 호출하도록 수정
+            if (typeof openTestDetailModal === 'function') {
+                openTestDetailModal(data.testResult.result_id);
+            } else {
+                // 폴백: 모달 파일이 로드되지 않은 경우
+                loadTestDetailModal().then(() => {
+                    openTestDetailModal(data.testResult.result_id);
+                });
+            }
+        }
+        
+        // 모달 파일 동적 로드
+        async function loadTestDetailModal() {
+            try {
+                const response = await fetch('admin-test-detail-modal.html');
+                const html = await response.text();
+                
+                // HTML을 파싱하여 모달과 스크립트 추출
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                
+                // 모달 HTML 추가
+                const modal = doc.getElementById('testDetailModal');
+                if (modal && !document.getElementById('testDetailModal')) {
+                    document.body.appendChild(modal);
+                }
+                
+                // 스크립트 실행
+                const scripts = doc.querySelectorAll('script');
+                scripts.forEach(script => {
+                    if (script.src) {
+                        // 외부 스크립트
+                        const newScript = document.createElement('script');
+                        newScript.src = script.src;
+                        document.head.appendChild(newScript);
+                    } else {
+                        // 인라인 스크립트
+                        eval(script.textContent);
+                    }
+                });
+                
+                // 스타일 추가
+                const styles = doc.querySelectorAll('style');
+                styles.forEach(style => {
+                    document.head.appendChild(style.cloneNode(true));
+                });
+                
+            } catch (error) {
+                console.error('모달 로드 실패:', error);
+            }
+        }
+        
+        // 테스트 상세 모달 닫기 (폴백용)
+        if (typeof window.closeTestDetailModal === 'undefined') {
+            window.closeTestDetailModal = function() {
+                const modal = document.getElementById('testDetailModal');
+                if (modal) {
+                    modal.remove();
+                }
+            }
+        }
+        
+        // 점수 등급 반환
+        function getGrade(score) {
+            if (score >= 90) return '🏆 매우 우수';
+            if (score >= 80) return '🌟 우수';
+            if (score >= 70) return '👍 양호';
+            if (score >= 60) return '✔️ 보통';
+            return '📈 개선 필요';
+        }
+        
+        // 역량별 카드 생성
+        function getCompetencyCards(result) {
+            const competencies = [
+                { name: '문제해결', score: result.problem_solving_score, color: '#e74c3c' },
+                { name: '커뮤니케이션', score: result.communication_score, color: '#f39c12' },
+                { name: '리더십', score: result.leadership_score, color: '#27ae60' },
+                { name: '창의성', score: result.creativity_score, color: '#9b59b6' },
+                { name: '팀워크', score: result.teamwork_score, color: '#3498db' }
+            ];
+            
+            return competencies.map(comp => `
+                <div style="background: white; border: 1px solid #e9ecef; padding: 20px; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 12px; color: #666; margin-bottom: 8px;">${comp.name}</div>
+                    <div style="font-size: 28px; font-weight: bold; color: ${comp.color}; margin-bottom: 10px;">${comp.score}</div>
+                    <div style="height: 4px; background: #e9ecef; border-radius: 2px; overflow: hidden;">
+                        <div style="height: 100%; background: ${comp.color}; width: ${comp.score}%; transition: width 0.5s;"></div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // 역량별 카드 생성 (평균 포함)
+        function getCompetencyCardsWithAverage(result, companyAverage) {
+            const competencies = [
+                { 
+                    name: '문제해결', 
+                    score: result.problem_solving_score, 
+                    avg: companyAverage ? parseFloat(companyAverage.avg_problem_solving) : null,
+                    color: '#e74c3c' 
+                },
+                { 
+                    name: '커뮤니케이션', 
+                    score: result.communication_score,
+                    avg: companyAverage ? parseFloat(companyAverage.avg_communication) : null,
+                    color: '#f39c12' 
+                },
+                { 
+                    name: '리더십', 
+                    score: result.leadership_score,
+                    avg: companyAverage ? parseFloat(companyAverage.avg_leadership) : null,
+                    color: '#27ae60' 
+                },
+                { 
+                    name: '창의성', 
+                    score: result.creativity_score,
+                    avg: companyAverage ? parseFloat(companyAverage.avg_creativity) : null,
+                    color: '#9b59b6' 
+                },
+                { 
+                    name: '팀워크', 
+                    score: result.teamwork_score,
+                    avg: companyAverage ? parseFloat(companyAverage.avg_teamwork) : null,
+                    color: '#3498db' 
+                }
+            ];
+            
+            return competencies.map(comp => {
+                const diff = comp.avg ? (comp.score - comp.avg).toFixed(1) : null;
+                return `
+                    <div style="background: white; border: 1px solid #e9ecef; padding: 20px; border-radius: 8px; text-align: center; position: relative;">
+                        <div style="font-size: 12px; color: #666; margin-bottom: 8px;">${comp.name}</div>
+                        <div style="font-size: 28px; font-weight: bold; color: ${comp.color}; margin-bottom: 10px;">${comp.score}</div>
+                        ${comp.avg ? `
+                            <div style="font-size: 11px; color: #999; margin-bottom: 5px;">
+                                조직 평균: ${comp.avg.toFixed(1)}
+                            </div>
+                            <div style="font-size: 12px; color: ${diff > 0 ? '#27ae60' : diff < 0 ? '#e74c3c' : '#666'}; font-weight: 500;">
+                                ${diff > 0 ? '+' : ''}${diff}
+                            </div>
+                        ` : ''}
+                        <div style="height: 4px; background: #e9ecef; border-radius: 2px; overflow: hidden; margin-top: 10px;">
+                            <div style="height: 100%; background: ${comp.color}; width: ${comp.score}%; transition: width 0.5s;"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // 비교 차트 그리기
+        function drawComparisonChart(testResult, companyAverage) {
+            const ctx = document.getElementById('comparisonChart').getContext('2d');
+            
+            new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['문제해결', '커뮤니케이션', '리더십', '창의성', '팀워크'],
+                    datasets: [
+                        {
+                            label: testResult.user_name,
+                            data: [
+                                testResult.problem_solving_score,
+                                testResult.communication_score,
+                                testResult.leadership_score,
+                                testResult.creativity_score,
+                                testResult.teamwork_score
+                            ],
+                            backgroundColor: 'rgba(102, 126, 234, 0.25)',
+                            borderColor: '#667eea',
+                            borderWidth: 2,
+                            pointBackgroundColor: '#667eea',
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: '#667eea'
+                        },
+                        {
+                            label: '조직 평균',
+                            data: [
+                                parseFloat(companyAverage.avg_problem_solving),
+                                parseFloat(companyAverage.avg_communication),
+                                parseFloat(companyAverage.avg_leadership),
+                                parseFloat(companyAverage.avg_creativity),
+                                parseFloat(companyAverage.avg_teamwork)
+                            ],
+                            backgroundColor: 'rgba(255, 99, 132, 0.25)',
+                            borderColor: '#ff6384',
+                            borderWidth: 2,
+                            pointBackgroundColor: '#ff6384',
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: '#ff6384'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                stepSize: 20
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    label += context.parsed.r + '점';
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 오류 표시
+        function showError(message) {
+            document.querySelector('.detail-container').innerHTML = `
+                <div class="error-message">
+                    ${message}
+                </div>
+            `;
+        }
+        
+        // 로그아웃
+        function logout() {
+            if (confirm('로그아웃 하시겠습니까?')) {
+                localStorage.removeItem('adminToken');
+                localStorage.removeItem('adminUser');
+                window.location.href = 'admin-login.html';
+            }
+        }
+    </script>
+    <!-- 모달 파일 로드 -->
+    <script>
+        // 페이지 로드 시 모달 파일 미리 로드
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTestDetailModal();
+        });
+    </script>
+</body>
+</html>
