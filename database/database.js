@@ -8,10 +8,39 @@ if (process.env.DATABASE_URL) {
     console.log('🔍 DATABASE_URL 프로토콜:', process.env.DATABASE_URL.split('://')[0]);
 }
 
-const pool = new Pool({
+// Railway PostgreSQL IPv6 문제 해결
+let poolConfig = {
     connectionString: process.env.DATABASE_URL,
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-});
+};
+
+// Railway 환경에서 IPv6 문제 해결
+if (process.env.DATABASE_URL && process.env.NODE_ENV === 'production') {
+    try {
+        const url = new URL(process.env.DATABASE_URL);
+        // IPv6 주소인 경우 IPv4로 변경 시도
+        if (url.hostname.includes(':')) {
+            console.log('⚠️ IPv6 주소 감지, 연결 설정 조정 중...');
+            poolConfig = {
+                ...poolConfig,
+                host: url.hostname,
+                port: url.port || 5432,
+                database: url.pathname.slice(1),
+                user: url.username,
+                password: url.password,
+                ssl: { rejectUnauthorized: false },
+                // IPv4 강제
+                connectionTimeoutMillis: 10000,
+                query_timeout: 10000,
+                statement_timeout: 10000
+            };
+        }
+    } catch (err) {
+        console.error('DATABASE_URL 파싱 오류:', err);
+    }
+}
+
+const pool = new Pool(poolConfig);
 
 // 연결 테스트
 pool.on('connect', () => {

@@ -3,10 +3,35 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const { Pool } = require('pg');
 
-const pool = new Pool({
+// Railway PostgreSQL IPv6 문제 해결
+let poolConfig = {
     connectionString: process.env.DATABASE_URL,
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-});
+};
+
+// Railway 환경에서 IPv6 문제 해결
+if (process.env.DATABASE_URL && process.env.NODE_ENV === 'production') {
+    try {
+        const url = new URL(process.env.DATABASE_URL);
+        // IPv6 주소인 경우 연결 설정 조정
+        if (url.hostname.includes(':')) {
+            console.log('⚠️ IPv6 주소 감지, 연결 설정 조정 중...');
+            poolConfig = {
+                host: url.hostname,
+                port: url.port || 5432,
+                database: url.pathname.slice(1),
+                user: url.username,
+                password: url.password,
+                ssl: { rejectUnauthorized: false },
+                connectionTimeoutMillis: 10000
+            };
+        }
+    } catch (err) {
+        console.error('DATABASE_URL 파싱 오류:', err);
+    }
+}
+
+const pool = new Pool(poolConfig);
 
 // 초기 설정 API - 한 번만 실행 가능
 router.post('/init', async (req, res) => {
