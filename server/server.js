@@ -57,22 +57,41 @@ app.use('/api/', apiLimiter);
 const clientPath = path.join(__dirname, '../client');
 console.log(`정적 파일 경로: ${clientPath}`);
 
-// Cache-Control 헤더 설정 미들웨어
-app.use((req, res, next) => {
-    // HTML, CSS, JS 파일은 캐시하지 않음 (항상 최신 버전)
-    if (req.url.endsWith('.html') || req.url.endsWith('.css') || req.url.endsWith('.js') || req.url === '/') {
-        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-        res.setHeader('Pragma', 'no-cache');
-        res.setHeader('Expires', '0');
+// 정적 파일 서빙 (client 폴더)
+app.use('/client', express.static(clientPath, {
+    setHeaders: (res, filePath) => {
+        // MIME 타입 명시적 설정
+        if (filePath.endsWith('.css')) {
+            res.setHeader('Content-Type', 'text/css');
+        } else if (filePath.endsWith('.js')) {
+            res.setHeader('Content-Type', 'application/javascript');
+        } else if (filePath.endsWith('.html')) {
+            res.setHeader('Content-Type', 'text/html');
+        }
+        
+        // 캐시 설정
+        if (filePath.endsWith('.html') || filePath.endsWith('.css') || filePath.endsWith('.js')) {
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.setHeader('Pragma', 'no-cache');
+            res.setHeader('Expires', '0');
+        } else if (filePath.match(/\.(png|jpg|jpeg|gif|ico|svg)$/)) {
+            res.setHeader('Cache-Control', 'public, max-age=3600');
+        }
     }
-    // 이미지 등 정적 자원은 짧은 캐시 허용
-    else if (req.url.match(/\.(png|jpg|jpeg|gif|ico|svg)$/)) {
-        res.setHeader('Cache-Control', 'public, max-age=3600'); // 1시간
-    }
-    next();
-});
+}));
 
-app.use(express.static(clientPath));
+// 루트 경로에서도 client 폴더 서빙 (기존 경로 호환성)
+app.use(express.static(clientPath, {
+    setHeaders: (res, filePath) => {
+        if (filePath.endsWith('.css')) {
+            res.setHeader('Content-Type', 'text/css');
+        } else if (filePath.endsWith('.js')) {
+            res.setHeader('Content-Type', 'application/javascript');
+        } else if (filePath.endsWith('.html')) {
+            res.setHeader('Content-Type', 'text/html');
+        }
+    }
+}));
 
 // JWT 토큰 생성 (auth 미들웨어에서 가져옴)
 const { generateToken } = require('./middleware/auth');
@@ -1389,32 +1408,48 @@ async function startServer() {
         console.log(`===========================================`);
         console.log(`🚀 서버가 포트 ${PORT}에서 실행중입니다.`);
         console.log(`🗄️  PostgreSQL 데이터베이스 사용 중`);
+        console.log(`📂 정적 파일 경로: ${clientPath}`);
+        console.log(`📁 파일 존재 여부: ${fs.existsSync(clientPath) ? '✅' : '❌'}`);
 
         // 환경 변수 디버깅 정보 출력
         console.log(`🔍 환경 변수 확인:`);
         console.log(`   - PORT: ${process.env.PORT || 'undefined'}`);
-        console.log(`   - DATABASE_URL: ${process.env.DATABASE_URL ? '설정됨' : 'undefined'}`);
-        console.log(`   - RAILWAY_ENVIRONMENT: ${process.env.RAILWAY_ENVIRONMENT || 'undefined'}`);
+        console.log(`   - DATABASE_URL: ${process.env.DATABASE_URL ? '✅ 설정됨' : '❌ undefined'}`);
+        console.log(`   - JWT_SECRET: ${process.env.JWT_SECRET ? '✅ 설정됨' : '❌ undefined'}`);
         console.log(`   - NODE_ENV: ${process.env.NODE_ENV || 'undefined'}`);
-        console.log(`   - KAKAO_JAVASCRIPT_KEY: ${process.env.KAKAO_JAVASCRIPT_KEY ? process.env.KAKAO_JAVASCRIPT_KEY.substring(0, 8) + '... (길이:' + process.env.KAKAO_JAVASCRIPT_KEY.length + ')' : 'undefined'}`);
 
         if (isRailway) {
             console.log(`🚂 Railway 환경에서 실행 중`);
-            console.log(`⚠️  도메인 URL은 Railway 대시보드에서 확인하세요!`);
-            console.log(`📋 Health Check: [Railway_Domain]/api/health`);
+            console.log(`\n📌 초기 설정:`);
+            console.log(`   1. 시스템 상태 확인: /api/setup/status`);
+            console.log(`   2. 관리자 생성: POST /api/setup/init`);
+            console.log(`   3. 관리자 로그인: /client/admin-login.html`);
         } else {
             console.log(`📋 API 테스트: http://localhost:${PORT}/api/health`);
             console.log(`🌐 로컬 접속: http://localhost:${PORT}`);
             console.log(`🌍 외부 접속: http://${localIP}:${PORT}`);
             console.log(`💻 로컬 개발 환경에서 실행 중`);
-            console.log(`📱 다른 기기에서 접속하려면: http://${localIP}:${PORT} 사용`);
         }
         console.log(`===========================================`);
     });
 }
 
+// 디버깅 미들웨어 (404 전에)
+app.use((req, res, next) => {
+    console.log(`📍 요청 경로: ${req.method} ${req.originalUrl}`);
+    console.log(`📁 요청 파일 타입: ${path.extname(req.originalUrl)}`);
+    next();
+});
+
 // 404 핸들러 (모든 라우트 뒤에 위치)
 app.use((req, res) => {
+    // 정적 파일 요청인 경우 더 자세한 에러 메시지
+    const ext = path.extname(req.originalUrl);
+    if (ext === '.css' || ext === '.js' || ext === '.html') {
+        console.error(`❌ 정적 파일을 찾을 수 없음: ${req.originalUrl}`);
+        console.error(`   시도한 경로: ${path.join(clientPath, req.originalUrl)}`);
+    }
+    
     res.status(404).json({
         success: false,
         error: '요청한 리소스를 찾을 수 없습니다',
