@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>시스템 초기화</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        .init-btn {
+            background: #4CAF50;
+            color: white;
+        }
+        .init-btn:hover {
+            background: #45a049;
+        }
+        .status-btn {
+            background: #2196F3;
+            color: white;
+        }
+        .status-btn:hover {
+            background: #1976D2;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .links {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+        .links a {
+            display: inline-block;
+            margin: 5px 10px;
+            color: #2196F3;
+            text-decoration: none;
+        }
+        .links a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 신입사원 역량검사 시스템 초기화</h1>
+        
+        <button class="status-btn" onclick="checkStatus()">📊 시스템 상태 확인</button>
+        <button class="init-btn" onclick="initSystem()">⚡ 시스템 초기화 (관리자 생성)</button>
+        
+        <div id="result" class="result"></div>
+        
+        <div class="links">
+            <h3>초기화 완료 후 접속:</h3>
+            <a href="/client/admin-login.html">👨‍💼 관리자 로그인</a>
+            <a href="/client/login.html">👤 사용자 로그인</a>
+            <a href="/client/index.html">🏠 메인 페이지</a>
+        </div>
+    </div>
+
+    <script>
+        async function checkStatus() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result info';
+            resultDiv.innerHTML = '상태 확인 중...';
+            
+            try {
+                const response = await fetch('/api/setup/status');
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.className = 'result info';
+                    resultDiv.innerHTML = `
+                        <h3>📊 시스템 상태</h3>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                        ${data.initialized ? 
+                            '<p>✅ 시스템이 이미 초기화되었습니다.</p>' : 
+                            '<p>⚠️ 시스템 초기화가 필요합니다.</p>'}
+                    `;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `❌ 오류: ${data.message}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ 연결 오류: ${error.message}`;
+            }
+        }
+
+        async function initSystem() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result info';
+            resultDiv.innerHTML = '시스템 초기화 중...';
+            
+            try {
+                const response = await fetch('/api/setup/init', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h3>✅ 초기화 완료!</h3>
+                        <h4>관리자 계정:</h4>
+                        <p>📧 이메일: <strong>${data.data.admin.email}</strong></p>
+                        <p>🔑 비밀번호: <strong>${data.data.admin.password}</strong></p>
+                        <p style="color: red;">⚠️ ${data.data.admin.note}</p>
+                        
+                        <h4>테스트 사용자:</h4>
+                        <ul>
+                        ${data.data.testUsers.map(u => 
+                            `<li>${u.name} - ${u.email} (비밀번호: ${u.password})</li>`
+                        ).join('')}
+                        </ul>
+                        
+                        <h4>접속 URL:</h4>
+                        <p>관리자: <a href="${data.data.urls.adminLogin}">${data.data.urls.adminLogin}</a></p>
+                        <p>사용자: <a href="${data.data.urls.userLogin}">${data.data.urls.userLogin}</a></p>
+                    `;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `
+                        <h3>❌ 초기화 실패</h3>
+                        <p>${data.message}</p>
+                        ${data.error ? `<p>오류: ${data.error}</p>` : ''}
+                    `;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ 연결 오류: ${error.message}`;
+            }
+        }
+
+        // 페이지 로드 시 자동으로 상태 확인
+        window.onload = () => {
+            checkStatus();
+        };
+    </script>
+</body>
+</html>
