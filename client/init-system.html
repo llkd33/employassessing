@@ -90,8 +90,8 @@
     <div class="container">
         <h1>🚀 신입사원 역량검사 시스템 초기화</h1>
         
-        <button class="status-btn" onclick="checkStatus()">📊 시스템 상태 확인</button>
-        <button class="init-btn" onclick="initSystem()">⚡ 시스템 초기화 (관리자 생성)</button>
+        <button class="status-btn" id="statusBtn">📊 시스템 상태 확인</button>
+        <button class="init-btn" id="initBtn">⚡ 시스템 초기화 (관리자 생성)</button>
         
         <div id="result" class="result"></div>
         
@@ -182,10 +182,15 @@
             }
         }
 
-        // 페이지 로드 시 자동으로 상태 확인
-        window.onload = () => {
+        // 이벤트 리스너 등록
+        document.addEventListener('DOMContentLoaded', () => {
+            // 버튼 이벤트 연결
+            document.getElementById('statusBtn').addEventListener('click', checkStatus);
+            document.getElementById('initBtn').addEventListener('click', initSystem);
+            
+            // 페이지 로드 시 자동으로 상태 확인
             checkStatus();
-        };
+        });
     </script>
 </body>
 </html>
