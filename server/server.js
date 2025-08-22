@@ -1363,21 +1363,38 @@ app.get('*', (req, res) => {
 // 서버 시작
 async function startServer() {
     try {
-        // 데이터베이스 스키마 자동 초기화
-        const initializeSchema = require('../database/init-schema');
-        await initializeSchema();
+        // Supabase를 사용하는 경우 스키마 자동 초기화 건너뛰기
+        if (process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('supabase')) {
+            // 데이터베이스 스키마 자동 초기화 (Supabase가 아닌 경우만)
+            const initializeSchema = require('../database/init-schema');
+            await initializeSchema();
 
-        // 스키마 마이그레이션 실행
-        const migrateSchema = require('../database/migrate-schema');
-        await migrateSchema();
+            // 스키마 마이그레이션 실행
+            const migrateSchema = require('../database/migrate-schema');
+            await migrateSchema();
+        } else {
+            console.log('⚠️  Supabase 사용 감지 - 자동 스키마 초기화 건너뜁니다.');
+            console.log('📌 초기 설정은 /api/setup/init 엔드포인트를 사용하세요.');
+        }
 
-        // 데이터베이스 연결 및 통계 확인
+        // 데이터베이스 연결 테스트 (간단한 쿼리로)
         console.log('🔍 데이터베이스 연결 확인 중...');
-        const stats = await db.getTestStats();
-        console.log('✅ 데이터베이스 연결 성공!');
-        console.log(`📊 현재 통계: 사용자 ${stats.totalUsers}명, 테스트 ${stats.totalTests}개`);
+        try {
+            // 간단한 연결 테스트
+            const { Pool } = require('pg');
+            const pool = new Pool({
+                connectionString: process.env.DATABASE_URL,
+                ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+            });
+            await pool.query('SELECT NOW()');
+            await pool.end();
+            console.log('✅ 데이터베이스 연결 성공!');
+        } catch (dbError) {
+            console.error('⚠️  데이터베이스 연결 테스트 실패:', dbError.message);
+            console.log('   /api/setup/init 엔드포인트로 초기화를 진행하세요.');
+        }
     } catch (error) {
-        console.error('❌ 데이터베이스 초기화 실패:', error.message);
+        console.error('❌ 서버 시작 중 오류:', error.message);
         console.log('⚠️  DATABASE_URL 환경 변수를 확인해주세요.');
     }
 
